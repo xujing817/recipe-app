@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { X, ImagePlus, Plus, Minus, Clock, ChefHat } from 'lucide-react';
+import { X, ImagePlus, Plus, Minus, Clock, ChefHat, Sparkles, FileText } from 'lucide-react';
 import { Category, Recipe } from '@/types';
+import { generateRecipeFromText } from '@/utils/ai';
 
 interface RecipeFormProps {
   isOpen: boolean;
@@ -28,20 +29,25 @@ export const RecipeForm = ({ isOpen, onClose, onSubmit, categories, recipe }: Re
   const [prepTime, setPrepTime] = useState(0);
   const [cookTime, setCookTime] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [aiText, setAiText] = useState('');
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiError, setAiError] = useState('');
 
   useEffect(() => {
-    if (recipe) {
-      setName(recipe.name);
-      setCategory(recipe.category);
-      setImagePreview(recipe.image_url);
-      setIngredients([...recipe.ingredients]);
-      setSteps([...recipe.steps]);
-      setPrepTime(recipe.prep_time);
-      setCookTime(recipe.cook_time);
-    } else {
-      resetForm();
+    if (isOpen) {
+      if (recipe) {
+        setName(recipe.name);
+        setCategory(recipe.category);
+        setImagePreview(recipe.image_url);
+        setIngredients([...recipe.ingredients]);
+        setSteps([...recipe.steps]);
+        setPrepTime(recipe.prep_time);
+        setCookTime(recipe.cook_time);
+      } else {
+        resetForm();
+      }
     }
-  }, [recipe]);
+  }, [isOpen, recipe]);
 
   const resetForm = () => {
     setName('');
@@ -52,6 +58,8 @@ export const RecipeForm = ({ isOpen, onClose, onSubmit, categories, recipe }: Re
     setSteps(['']);
     setPrepTime(0);
     setCookTime(0);
+    setAiText('');
+    setAiError('');
   };
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -92,6 +100,38 @@ export const RecipeForm = ({ isOpen, onClose, onSubmit, categories, recipe }: Re
     const newSteps = [...steps];
     newSteps[index] = value;
     setSteps(newSteps);
+  };
+
+  const handleAiGenerate = async () => {
+    if (!aiText.trim()) {
+      setAiError('请粘贴菜谱内容');
+      return;
+    }
+
+    setAiError('');
+    setAiLoading(true);
+
+    const result = await generateRecipeFromText(aiText);
+
+    if (result && result.name) {
+      setName(result.name);
+      setCategory(result.category || categories[0]?.name || '');
+      setIngredients(result.ingredients.length > 0 ? result.ingredients : ['']);
+      setSteps(result.steps.length > 0 ? result.steps : ['']);
+      setPrepTime(result.prep_time || 0);
+      setCookTime(result.cook_time || 0);
+      setAiText('');
+    } else {
+      setAiError('AI 无法分析菜谱内容，请检查内容是否完整');
+      setName('');
+      setCategory(categories[0]?.name || '');
+      setIngredients(['']);
+      setSteps(['']);
+      setPrepTime(0);
+      setCookTime(0);
+    }
+
+    setAiLoading(false);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -304,6 +344,49 @@ export const RecipeForm = ({ isOpen, onClose, onSubmit, categories, recipe }: Re
                 </div>
               ))}
             </div>
+          </div>
+
+          <div className="border-t border-gray-100 pt-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-5 h-5 text-lightgreen" />
+              <h3 className="text-lg font-semibold text-gray-800">AI 智能导入</h3>
+            </div>
+            <p className="text-sm text-gray-500 mb-3">
+              将菜谱网页中的文字内容复制粘贴到下方文本框，AI 将自动提取菜谱信息
+            </p>
+            <div className="flex flex-col gap-3">
+              <div className="relative">
+                <FileText className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+                <textarea
+                  value={aiText}
+                  onChange={(e) => setAiText(e.target.value)}
+                  placeholder="在此粘贴菜谱网页内容，包括菜名、食材、做法等..."
+                  rows={6}
+                  className="w-full pl-10 pr-4 py-3 text-base bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-lightgreen focus:border-transparent resize-none"
+                />
+              </div>
+              <button
+                type="button"
+                onClick={handleAiGenerate}
+                disabled={aiLoading}
+                className="self-end px-8 py-3 bg-gradient-to-r from-lightgreen to-green-400 text-gray-800 font-bold text-base rounded-xl hover:from-green-300 hover:to-green-500 transition-all duration-300 disabled:opacity-50 flex items-center gap-2"
+              >
+                {aiLoading ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-gray-800 border-t-transparent rounded-full animate-spin" />
+                    分析中
+                  </>
+                ) : (
+                  <>
+                    <Sparkles className="w-4 h-4" />
+                    AI 分析
+                  </>
+                )}
+              </button>
+            </div>
+            {aiError && (
+              <p className="mt-2 text-sm text-red-500">{aiError}</p>
+            )}
           </div>
 
           <div className="flex gap-3 pt-4">

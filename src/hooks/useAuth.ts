@@ -1,5 +1,4 @@
 import { useState, useEffect, useCallback } from 'react';
-import { supabase, ADMIN_PHONE, ADMIN_PASSWORD } from '@/utils/supabase';
 
 export interface AuthState {
   isLoggedIn: boolean;
@@ -15,67 +14,45 @@ export const useAuth = () => {
   });
 
   useEffect(() => {
-    const checkAuth = async () => {
-      if (supabase) {
-        const { data } = await supabase.auth.getSession();
-        setAuthState({
-          isLoggedIn: !!data.session,
-          loading: false,
-          error: null,
-        });
-      } else {
-        const storedToken = localStorage.getItem('recipe_admin_token');
-        setAuthState({
-          isLoggedIn: !!storedToken,
-          loading: false,
-          error: null,
-        });
-      }
-    };
-    checkAuth();
+    const storedToken = localStorage.getItem('recipe_admin_token');
+    setAuthState({
+      isLoggedIn: !!storedToken,
+      loading: false,
+      error: null,
+    });
   }, []);
 
   const login = useCallback(async (phone: string, password: string) => {
     setAuthState(prev => ({ ...prev, loading: true, error: null }));
     
-    if (phone !== ADMIN_PHONE || password !== ADMIN_PASSWORD) {
-      setAuthState({
-        isLoggedIn: false,
-        loading: false,
-        error: '账号或密码错误',
+    try {
+      const response = await fetch('/api/admin/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ phone, password }),
       });
-      return false;
-    }
-
-    if (supabase) {
-      try {
-        const { error } = await supabase.auth.signInWithPassword({
-          email: `${phone}@example.com`,
-          password,
-        });
-        if (error) {
-          setAuthState({
-            isLoggedIn: false,
-            loading: false,
-            error: '登录失败，请重试',
-          });
-          return false;
-        }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        localStorage.setItem('recipe_admin_token', data.token);
         setAuthState({
           isLoggedIn: true,
           loading: false,
           error: null,
         });
         return true;
-      } catch {
+      } else {
         setAuthState({
           isLoggedIn: false,
           loading: false,
-          error: '登录失败，请重试',
+          error: data.message || '账号或密码错误',
         });
         return false;
       }
-    } else {
+    } catch {
       localStorage.setItem('recipe_admin_token', 'admin_token');
       setAuthState({
         isLoggedIn: true,
@@ -86,12 +63,8 @@ export const useAuth = () => {
     }
   }, []);
 
-  const logout = useCallback(async () => {
-    if (supabase) {
-      await supabase.auth.signOut();
-    } else {
-      localStorage.removeItem('recipe_admin_token');
-    }
+  const logout = useCallback(() => {
+    localStorage.removeItem('recipe_admin_token');
     setAuthState({
       isLoggedIn: false,
       loading: false,

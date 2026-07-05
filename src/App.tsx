@@ -33,10 +33,25 @@ function App() {
   }, []);
 
   const filteredRecipes = useMemo(() => {
-    let result = filterByCategory(selectedCategory);
-    result = searchRecipes(searchKeyword);
+    let result = recipes;
+    
+    if (selectedCategory && selectedCategory !== '全部') {
+      result = result.filter(recipe => recipe.category === selectedCategory);
+    }
+    
+    if (searchKeyword.trim()) {
+      const lowerKeyword = searchKeyword.toLowerCase();
+      result = result.filter(
+        recipe =>
+          recipe.name.toLowerCase().includes(lowerKeyword) ||
+          recipe.ingredients.some(ingredient =>
+            ingredient.toLowerCase().includes(lowerKeyword)
+          )
+      );
+    }
+    
     return result;
-  }, [selectedCategory, searchKeyword, filterByCategory, searchRecipes]);
+  }, [recipes, selectedCategory, searchKeyword]);
 
   const handleViewRecipe = (recipe: Recipe) => {
     setSelectedRecipe(recipe);

@@ -1,6 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
 import { Recipe, Category, RecipeFormData } from '@/types';
-import { supabase, mockRecipes, mockCategories } from '@/utils/supabase';
 
 export const useRecipes = () => {
   const [recipes, setRecipes] = useState<Recipe[]>([]);
@@ -8,63 +7,44 @@ export const useRecipes = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
+  const fetchData = useCallback(async () => {
+    setLoading(true);
+    setError(null);
 
-      if (supabase) {
-        try {
-          const [recipesRes, categoriesRes] = await Promise.all([
-            supabase.from('recipes').select('*'),
-            supabase.from('categories').select('*'),
-          ]);
+    try {
+      const [recipesRes, categoriesRes] = await Promise.all([
+        fetch('/api/recipes'),
+        fetch('/api/categories'),
+      ]);
 
-          if (recipesRes.error) throw recipesRes.error;
-          if (categoriesRes.error) throw categoriesRes.error;
-
-          setRecipes(recipesRes.data || []);
-          setCategories(categoriesRes.data || []);
-        } catch (err) {
-          console.warn('Supabase connection failed, using mock data');
-          setRecipes(mockRecipes);
-          setCategories(mockCategories);
-        }
-      } else {
-        setRecipes(mockRecipes);
-        setCategories(mockCategories);
+      if (!recipesRes.ok || !categoriesRes.ok) {
+        throw new Error('Failed to fetch data');
       }
 
-      setLoading(false);
-    };
+      const recipesData = await recipesRes.json();
+      const categoriesData = await categoriesRes.json();
 
-    fetchData();
+      setRecipes(recipesData || []);
+      setCategories(categoriesData || []);
+    } catch (err) {
+      console.warn('API connection failed');
+      setRecipes([]);
+      setCategories([]);
+    }
+
+    setLoading(false);
   }, []);
+
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const addRecipe = useCallback(async (formData: RecipeFormData): Promise<boolean> => {
     setError(null);
 
     let imageUrl = '';
     if (formData.image) {
-      if (supabase) {
-        const fileName = `${Date.now()}-${formData.image.name}`;
-        const { data, error: uploadError } = await supabase.storage
-          .from('recipe-images')
-          .upload(fileName, formData.image);
-
-        if (uploadError) {
-          setError('图片上传失败');
-          return false;
-        }
-
-        const { data: urlData } = supabase.storage
-          .from('recipe-images')
-          .getPublicUrl(fileName);
-
-        imageUrl = urlData?.publicUrl || '';
-      } else {
-        imageUrl = URL.createObjectURL(formData.image);
-      }
+      imageUrl = URL.createObjectURL(formData.image);
     }
 
     const newRecipe: Omit<Recipe, 'id' | 'created_at' | 'updated_at'> = {
@@ -77,54 +57,36 @@ export const useRecipes = () => {
       cook_time: formData.cook_time,
     };
 
-    if (supabase) {
-      const { error: insertError } = await supabase
-        .from('recipes')
-        .insert([newRecipe]);
+    try {
+      const response = await fetch('/api/recipes', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newRecipe),
+      });
 
-      if (insertError) {
-        setError('添加失败');
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || '添加失败');
         return false;
       }
-    } else {
-      setRecipes(prev => [
-        {
-          ...newRecipe,
-          id: Date.now().toString(),
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-        },
-        ...prev,
-      ]);
-    }
 
-    return true;
-  }, []);
+      await fetchData();
+      return true;
+    } catch {
+      setError('添加失败');
+      return false;
+    }
+  }, [fetchData]);
 
   const updateRecipe = useCallback(async (id: string, formData: RecipeFormData): Promise<boolean> => {
     setError(null);
 
     let imageUrl = '';
     if (formData.image) {
-      if (supabase) {
-        const fileName = `${Date.now()}-${formData.image.name}`;
-        const { data, error: uploadError } = await supabase.storage
-          .from('recipe-images')
-          .upload(fileName, formData.image);
-
-        if (uploadError) {
-          setError('图片上传失败');
-          return false;
-        }
-
-        const { data: urlData } = supabase.storage
-          .from('recipe-images')
-          .getPublicUrl(fileName);
-
-        imageUrl = urlData?.publicUrl || '';
-      } else {
-        imageUrl = URL.createObjectURL(formData.image);
-      }
+      imageUrl = URL.createObjectURL(formData.image);
     }
 
     const updateData: Partial<Recipe> = {
@@ -141,46 +103,52 @@ export const useRecipes = () => {
       updateData.image_url = imageUrl;
     }
 
-    if (supabase) {
-      const { error: updateError } = await supabase
-        .from('recipes')
-        .update(updateData)
-        .eq('id', id);
+    try {
+      const response = await fetch(`/api/recipes/${id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(updateData),
+      });
 
-      if (updateError) {
-        setError('更新失败');
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || '更新失败');
         return false;
       }
-    } else {
-      setRecipes(prev =>
-        prev.map(recipe =>
-          recipe.id === id ? { ...recipe, ...updateData } : recipe
-        )
-      );
-    }
 
-    return true;
-  }, []);
+      await fetchData();
+      return true;
+    } catch {
+      setError('更新失败');
+      return false;
+    }
+  }, [fetchData]);
 
   const deleteRecipe = useCallback(async (id: string): Promise<boolean> => {
     setError(null);
 
-    if (supabase) {
-      const { error: deleteError } = await supabase
-        .from('recipes')
-        .delete()
-        .eq('id', id);
+    try {
+      const response = await fetch(`/api/recipes/${id}`, {
+        method: 'DELETE',
+      });
 
-      if (deleteError) {
-        setError('删除失败');
+      const data = await response.json();
+
+      if (!response.ok) {
+        setError(data.error || '删除失败');
         return false;
       }
-    } else {
-      setRecipes(prev => prev.filter(recipe => recipe.id !== id));
-    }
 
-    return true;
-  }, []);
+      await fetchData();
+      return true;
+    } catch {
+      setError('删除失败');
+      return false;
+    }
+  }, [fetchData]);
 
   const searchRecipes = useCallback((keyword: string): Recipe[] => {
     if (!keyword.trim()) return recipes;
