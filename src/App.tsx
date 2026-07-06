@@ -98,12 +98,14 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Sidebar 
-        categories={categories} 
-        selectedCategory={selectedCategory}
-        onSelectCategory={setSelectedCategory}
-        isMobile={isMobile}
-      />
+      {!isMobile && (
+        <Sidebar 
+          categories={categories} 
+          selectedCategory={selectedCategory}
+          onSelectCategory={setSelectedCategory}
+          isMobile={false}
+        />
+      )}
 
       <main className={`${isMobile ? '' : 'lg:ml-56'}`}>
         <Header
