@@ -180,14 +180,14 @@ app.delete('/api/recipes/:id', (req, res) => {
 
 app.get('/api/admin/config', (req, res) => {
   res.json({
-    adminPhone: process.env.ADMIN_PHONE || '',
+    adminPhone: process.env.ADMIN_PHONE || '18329081624',
   });
 });
 
 app.post('/api/admin/login', (req, res) => {
   const { phone, password } = req.body;
-  const adminPhone = process.env.ADMIN_PHONE;
-  const adminPassword = process.env.ADMIN_PASSWORD;
+  const adminPhone = process.env.ADMIN_PHONE || '18329081624';
+  const adminPassword = process.env.ADMIN_PASSWORD || '421302';
 
   if (phone === adminPhone && password === adminPassword) {
     res.json({
