@@ -28,7 +28,7 @@ export const SearchBar = ({ onSearch }: SearchBarProps) => {
         type="text"
         value={value}
         onChange={handleChange}
-        placeholder="搜索菜谱名称或配料..."
+        placeholder="请搜索菜谱名称或配料..."
         className="w-full pl-12 pr-12 py-3 text-base bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-lightgreen focus:border-transparent transition-all duration-300"
       />
       {value && (
