@@ -17,9 +17,10 @@ interface RecipeFormProps {
   }) => Promise<boolean>;
   categories: Category[];
   recipe?: Recipe | null;
+  getToken?: () => string | null;
 }
 
-export const RecipeForm = ({ isOpen, onClose, onSubmit, categories, recipe }: RecipeFormProps) => {
+export const RecipeForm = ({ isOpen, onClose, onSubmit, categories, recipe, getToken }: RecipeFormProps) => {
   const [name, setName] = useState('');
   const [category, setCategory] = useState('');
   const [image, setImage] = useState<File | null>(null);
@@ -111,7 +112,8 @@ export const RecipeForm = ({ isOpen, onClose, onSubmit, categories, recipe }: Re
     setAiError('');
     setAiLoading(true);
 
-    const result = await generateRecipeFromText(aiText);
+    const token = getToken ? getToken() : null;
+    const result = await generateRecipeFromText(aiText, token);
 
     if (result && result.name) {
       setName(result.name);
@@ -136,10 +138,10 @@ export const RecipeForm = ({ isOpen, onClose, onSubmit, categories, recipe }: Re
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const validIngredients = ingredients.filter(i => i.trim());
     const validSteps = steps.filter(s => s.trim());
-    
+
     if (!name.trim() || !category || validIngredients.length === 0 || validSteps.length === 0) {
       alert('请填写完整信息');
       return;
@@ -156,7 +158,7 @@ export const RecipeForm = ({ isOpen, onClose, onSubmit, categories, recipe }: Re
       cook_time: cookTime,
     });
     setLoading(false);
-    
+
     if (success) {
       onClose();
       resetForm();
@@ -167,15 +169,15 @@ export const RecipeForm = ({ isOpen, onClose, onSubmit, categories, recipe }: Re
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div 
+      <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
-      
+
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-hidden flex flex-col">
         <div className="flex items-center justify-between p-6 border-b border-gray-100">
-          <h2 className="text-2xl font-bold text-gray-800">
-            {recipe ? '编辑菜谱' : '添加新菜谱'}
+          <h2 className="text-xl font-bold text-gray-800">
+            {recipe ? '编辑菜谱' : '添加菜谱'}
           </h2>
           <button
             onClick={onClose}
@@ -186,101 +188,98 @@ export const RecipeForm = ({ isOpen, onClose, onSubmit, categories, recipe }: Re
         </div>
 
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-6">
+          {/* 图片上传 */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              菜谱名称
-            </label>
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="请输入菜谱名称"
-              className="w-full px-4 py-3 text-base bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-lightgreen focus:border-transparent"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              分类
-            </label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-4 py-3 text-base bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-lightgreen focus:border-transparent"
+            <label className="block text-sm font-medium text-gray-700 mb-2">菜谱图片</label>
+            <div
+              className="relative w-full h-48 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center cursor-pointer hover:border-lightgreen transition-colors overflow-hidden"
+              onClick={() => document.getElementById('image-upload')?.click()}
             >
-              {categories.map((cat) => (
-                <option key={cat.id} value={cat.name}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              菜谱图片 {recipe && '(不修改则保持原图片)'}
-            </label>
-            <div className="relative w-full h-48 bg-gray-50 border-2 border-dashed border-gray-200 rounded-xl flex items-center justify-center overflow-hidden">
               {imagePreview ? (
-                <img
-                  src={imagePreview}
-                  alt="预览"
-                  className="w-full h-full object-cover"
-                />
+                <img src={imagePreview} alt="Preview" className="w-full h-full object-cover" />
               ) : (
-                <label className="flex flex-col items-center gap-2 text-gray-400 cursor-pointer hover:text-lightgreen transition-colors">
+                <div className="flex flex-col items-center gap-2 text-gray-400">
                   <ImagePlus className="w-10 h-10" />
                   <span className="text-sm">点击上传图片</span>
-                </label>
+                </div>
               )}
               <input
+                id="image-upload"
                 type="file"
                 accept="image/*"
                 onChange={handleImageChange}
-                className="absolute inset-0 opacity-0 cursor-pointer"
+                className="hidden"
               />
             </div>
           </div>
 
-          <div className="flex gap-6">
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                <Clock className="w-4 h-4" />
-                准备时间(分钟)
+          {/* 名称和分类 */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">菜谱名称</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="请输入菜谱名称"
+                className="w-full px-4 py-2 text-base bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-lightgreen focus:border-transparent"
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">分类</label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value)}
+                className="w-full px-4 py-2 text-base bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-lightgreen focus:border-transparent"
+              >
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.name}>{cat.name}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          {/* 时间 */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <Clock className="w-4 h-4 inline mr-1" />
+                准备时间 (分钟)
               </label>
               <input
                 type="number"
                 value={prepTime}
-                onChange={(e) => setPrepTime(Number(e.target.value))}
+                onChange={(e) => setPrepTime(Math.max(0, parseInt(e.target.value) || 0))}
                 min="0"
-                className="w-full px-4 py-3 text-base bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-lightgreen focus:border-transparent"
+                className="w-full px-4 py-2 text-base bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-lightgreen focus:border-transparent"
               />
             </div>
-            <div className="flex-1">
-              <label className="block text-sm font-medium text-gray-700 mb-2 flex items-center gap-2">
-                <ChefHat className="w-4 h-4" />
-                烹饪时间(分钟)
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                <ChefHat className="w-4 h-4 inline mr-1" />
+                烹饪时间 (分钟)
               </label>
               <input
                 type="number"
                 value={cookTime}
-                onChange={(e) => setCookTime(Number(e.target.value))}
+                onChange={(e) => setCookTime(Math.max(0, parseInt(e.target.value) || 0))}
                 min="0"
-                className="w-full px-4 py-3 text-base bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-lightgreen focus:border-transparent"
+                className="w-full px-4 py-2 text-base bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-lightgreen focus:border-transparent"
               />
             </div>
           </div>
 
+          {/* 食材 */}
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium text-gray-700">配料清单</label>
+              <label className="text-sm font-medium text-gray-700">食材清单</label>
               <button
                 type="button"
                 onClick={addIngredient}
                 className="flex items-center gap-1 text-sm text-lightgreen hover:text-green-600 transition-colors"
               >
                 <Plus className="w-4 h-4" />
-                添加配料
+                添加食材
               </button>
             </div>
             <div className="space-y-2">
@@ -290,7 +289,7 @@ export const RecipeForm = ({ isOpen, onClose, onSubmit, categories, recipe }: Re
                     type="text"
                     value={ingredient}
                     onChange={(e) => updateIngredient(index, e.target.value)}
-                    placeholder={`配料 ${index + 1}`}
+                    placeholder={`食材 ${index + 1}`}
                     className="flex-1 px-4 py-2 text-base bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-lightgreen focus:border-transparent"
                   />
                   {ingredients.length > 1 && (
@@ -307,6 +306,7 @@ export const RecipeForm = ({ isOpen, onClose, onSubmit, categories, recipe }: Re
             </div>
           </div>
 
+          {/* 步骤 */}
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm font-medium text-gray-700">烹饪步骤</label>
@@ -346,6 +346,7 @@ export const RecipeForm = ({ isOpen, onClose, onSubmit, categories, recipe }: Re
             </div>
           </div>
 
+          {/* AI 智能导入 */}
           <div className="border-t border-gray-100 pt-6">
             <div className="flex items-center gap-2 mb-3">
               <Sparkles className="w-5 h-5 text-lightgreen" />
@@ -374,7 +375,7 @@ export const RecipeForm = ({ isOpen, onClose, onSubmit, categories, recipe }: Re
                 {aiLoading ? (
                   <>
                     <div className="w-4 h-4 border-2 border-gray-800 border-t-transparent rounded-full animate-spin" />
-                    分析中
+                    分析中...
                   </>
                 ) : (
                   <>

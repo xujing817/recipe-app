@@ -1,4 +1,14 @@
-import express from 'express';
+// Patch script: apply changes to original server.js
+const fs = require('fs');
+const path = require('path');
+
+const orig = fs.readFileSync(path.join(__dirname, '..', 'data', 'server_orig.js'), 'utf-8');
+const lines = orig.split('\n');
+
+// This approach is too fragile. Let me just rewrite server.js properly.
+// I'll compose the full server.js with all features.
+
+const server = `import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import dotenv from 'dotenv';
@@ -93,7 +103,7 @@ app.post('/api/auth/register', async (req, res) => {
     db.users.push(user);
     writeDb(db);
     const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ success: true, token, user: { id: user.id, username: user.username, role: user.role } });
+    res.json({ token, user: { id: user.id, username: user.username, role: user.role } });
   } catch { res.status(500).json({ error: '注册失败' }); }
 });
 
@@ -106,7 +116,7 @@ app.post('/api/auth/login', async (req, res) => {
       return res.status(401).json({ success: false, message: '账号或密码错误' });
     }
     const token = jwt.sign({ id: user.id, username: user.username, role: user.role }, JWT_SECRET, { expiresIn: '7d' });
-    res.json({ success: true, token, user: { id: user.id, username: user.username, role: user.role } });
+    res.json({ token, user: { id: user.id, username: user.username, role: user.role } });
   } catch { res.status(500).json({ error: '登录失败' }); }
 });
 
@@ -133,7 +143,7 @@ app.post('/api/admin/users', authMiddleware, adminMiddleware, async (req, res) =
     const user = { id: 'user-' + Date.now(), username, password_hash: hash, role: role || 'user', created_at: new Date().toISOString() };
     db.users.push(user);
     writeDb(db);
-    res.json({ success: true, id: user.id, username: user.username, role: user.role, created_at: user.created_at });
+    res.json({ id: user.id, username: user.username, role: user.role, created_at: user.created_at });
   } catch { res.status(500).json({ error: '添加失败' }); }
 });
 
@@ -147,15 +157,6 @@ app.delete('/api/admin/users/:id', authMiddleware, adminMiddleware, (req, res) =
     writeDb(db);
     res.json({ success: true });
   } catch { res.status(500).json({ error: '删除失败' }); }
-});
-
-
-// Get current user info
-app.get('/api/auth/me', authMiddleware, (req, res) => {
-  const db = readDb();
-  const user = db.users.find(u => u.id === req.user.id);
-  if (!user) return res.status(404).json({ error: '用户不存在' });
-  res.json({ id: user.id, username: user.username, role: user.role });
 });
 
 // ============ Recipes API ============
@@ -282,12 +283,12 @@ app.use('/api/ai', authMiddleware, async (req, res) => {
   try {
     const { method, body, originalUrl } = req;
     const apiPath = originalUrl.replace(/^\/api\/ai/, '');
-    const apiUrl = `https://tokenhub.tencentmaas.com/v1${apiPath}`;
+    const apiUrl = \`https://tokenhub.tencentmaas.com/v1\${apiPath}\`;
     const apiKey = process.env.AI_API_KEY;
     if (!apiKey) return res.status(500).json({ error: 'AI API Key not configured' });
     const controller = new AbortController();
     const timeoutId = setTimeout(() => { controller.abort(); console.warn('AI timeout'); }, AI_PROXY_TIMEOUT_MS);
-    const response = await fetch(apiUrl, { method, headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` }, body: method !== 'GET' ? JSON.stringify(body) : undefined, signal: controller.signal });
+    const response = await fetch(apiUrl, { method, headers: { 'Content-Type': 'application/json', 'Authorization': \`Bearer \${apiKey}\` }, body: method !== 'GET' ? JSON.stringify(body) : undefined, signal: controller.signal });
     clearTimeout(timeoutId);
     const data = await response.json();
     res.status(response.status).json(data);
@@ -309,5 +310,9 @@ app.get('/{*splat}', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+  console.log(\`Server running on http://localhost:\${PORT}\`);
 });
+`;
+
+fs.writeFileSync(path.join(__dirname, '..', 'server.js'), server, 'utf-8');
+console.log('server.js rewritten cleanly');

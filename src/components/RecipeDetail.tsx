@@ -1,5 +1,6 @@
 import { Recipe } from '@/types';
 import { X, Clock, ChefHat, ShoppingBag, ListOrdered } from 'lucide-react';
+import { formatTime } from '@/lib/utils';
 
 interface RecipeDetailProps {
   recipe: Recipe;
@@ -7,23 +8,15 @@ interface RecipeDetailProps {
 }
 
 export const RecipeDetail = ({ recipe, onClose }: RecipeDetailProps) => {
-  const formatTime = (minutes: number) => {
-    if (minutes < 60) return `${minutes}分钟`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours}小时${mins}分钟` : `${hours}小时`;
-  };
-
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div 
+      <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={(e) => e.stopPropagation()}
+        onClick={onClose}
       />
-      
-      <div 
+
+      <div
         className="relative bg-white rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden flex flex-col"
-        onClick={(e) => e.stopPropagation()}
       >
         <button
           onClick={onClose}
@@ -74,7 +67,7 @@ export const RecipeDetail = ({ recipe, onClose }: RecipeDetailProps) => {
             </div>
             <ul className="space-y-2">
               {recipe.ingredients.map((ingredient, index) => (
-                <li 
+                <li
                   key={index}
                   className="flex items-start gap-3 text-base text-gray-600 leading-relaxed"
                 >
@@ -94,7 +87,7 @@ export const RecipeDetail = ({ recipe, onClose }: RecipeDetailProps) => {
             </div>
             <ol className="space-y-4">
               {recipe.steps.map((step, index) => (
-                <li 
+                <li
                   key={index}
                   className="flex gap-4"
                 >

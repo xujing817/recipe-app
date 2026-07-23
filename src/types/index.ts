@@ -17,8 +17,28 @@ export interface Category {
   created_at: string;
 }
 
+export interface User {
+  id: string;
+  username: string;
+  role: 'admin' | 'user';
+  created_at: string;
+}
+
+export interface MenuItem {
+  id: string;
+  recipe_id: string;
+  recipe_name: string;
+  user_id: string;
+  username: string;
+  date: string;
+  created_at: string;
+  ingredients_status?: Record<string, boolean>;
+  all_ingredients_ready?: boolean;
+  completed?: boolean;
+}
+
 export interface LoginCredentials {
-  phone: string;
+  username: string;
   password: string;
 }
 

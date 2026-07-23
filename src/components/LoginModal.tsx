@@ -1,26 +1,26 @@
 import { useState } from 'react';
-import { X, Phone, Lock, Eye, EyeOff } from 'lucide-react';
+import { X, User, Lock, Eye, EyeOff } from 'lucide-react';
 
 interface LoginModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLogin: (phone: string, password: string) => Promise<boolean>;
+  onLogin: (username: string, password: string) => Promise<boolean>;
   loading: boolean;
   error: string | null;
 }
 
 export const LoginModal = ({ isOpen, onClose, onLogin, loading, error }: LoginModalProps) => {
-  const [phone, setPhone] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (phone && password) {
-      const success = await onLogin(phone, password);
+    if (username && password) {
+      const success = await onLogin(username, password);
       if (success) {
         onClose();
-        setPhone('');
+        setUsername('');
         setPassword('');
       }
     }
@@ -30,11 +30,11 @@ export const LoginModal = ({ isOpen, onClose, onLogin, loading, error }: LoginMo
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div 
+      <div
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={onClose}
       />
-      
+
       <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-8">
         <button
           onClick={onClose}
@@ -43,8 +43,8 @@ export const LoginModal = ({ isOpen, onClose, onLogin, loading, error }: LoginMo
           <X className="w-5 h-5" />
         </button>
 
-        <h2 className="text-2xl font-bold text-gray-800 mb-2">管理员登录</h2>
-        <p className="text-gray-500 mb-6">请输入账号密码登录后进行菜谱管理</p>
+        <h2 className="text-2xl font-bold text-gray-800 mb-2">用户登录</h2>
+        <p className="text-gray-500 mb-6">请输入账号密码登录</p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
@@ -52,11 +52,11 @@ export const LoginModal = ({ isOpen, onClose, onLogin, loading, error }: LoginMo
               账号
             </label>
             <div className="relative">
-              <Phone className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+              <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
-                type="tel"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                type="text"
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 placeholder="请输入账号"
                 className="w-full pl-12 pr-4 py-3 text-base bg-gray-50 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-lightgreen focus:border-transparent transition-all"
                 disabled={loading}
@@ -104,7 +104,7 @@ export const LoginModal = ({ isOpen, onClose, onLogin, loading, error }: LoginMo
         </form>
 
         <p className="text-center text-gray-400 text-sm mt-4">
-          非管理员用户仅可浏览查看
+          登录后可点菜，未登录仅可浏览
         </p>
       </div>
     </div>

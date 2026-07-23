@@ -1,0 +1,241 @@
+import express from 'express';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import dotenv from 'dotenv';
+import fs from 'fs';
+
+dotenv.config();
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const app = express();
+const PORT = process.env.PORT || 3000;
+
+const DATA_DIR = path.join(__dirname, 'data');
+const DB_FILE = path.join(DATA_DIR, 'db.json');
+
+const categories = [
+  { id: '1', name: '家常菜', created_at: new Date().toISOString() },
+  { id: '2', name: '川菜', created_at: new Date().toISOString() },
+  { id: '3', name: '粤菜', created_at: new Date().toISOString() },
+  { id: '4', name: '湘菜', created_at: new Date().toISOString() },
+  { id: '5', name: '甜品', created_at: new Date().toISOString() },
+  { id: '6', name: '汤羹', created_at: new Date().toISOString() },
+  { id: '7', name: '主食', created_at: new Date().toISOString() },
+  { id: '8', name: '其他', created_at: new Date().toISOString() },
+];
+
+const initData = () => {
+  if (!fs.existsSync(DATA_DIR)) {
+    fs.mkdirSync(DATA_DIR, { recursive: true });
+  }
+  if (!fs.existsSync(DB_FILE)) {
+    const dbData = {
+      recipes: [
+        { id: '1', name: '宫保鸡丁', category: '川菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Kung%20Pao%20Chicken%20with%20peanuts%20and%20dried%20chilies%20Chinese%20food%20professional%20photography&image_size=square', ingredients: ['鸡胸肉 200g', '花生米 50g', '干辣椒 10g', '花椒 5g', '葱姜蒜 适量', '生抽 2勺', '料酒 1勺', '糖 1勺', '醋 1勺', '盐 少许'], steps: ['鸡胸肉切丁，加入料酒、生抽、盐腌制15分钟', '花生米炸熟备用，干辣椒切段', '锅中倒油，油热后放入花椒和干辣椒炒香', '加入鸡丁快速翻炒至变色', '加入葱姜蒜继续翻炒', '倒入调好的酱汁（糖、醋、生抽、淀粉水）', '翻炒均匀后加入花生米', '最后撒上葱花即可出锅'], prep_time: 20, cook_time: 15, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '2', name: '红烧肉', category: '家常菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Chinese%20braised%20pork%20belly%20hong%20shao%20rou%20glossy%20caramelized%20pork%20professional%20food%20photography&image_size=square', ingredients: ['五花肉 500g', '生姜 1块', '大葱 1根', '八角 2个', '桂皮 1小块', '香叶 2片', '料酒 3勺', '生抽 2勺', '老抽 1勺', '冰糖 30g', '盐 适量'], steps: ['五花肉切块，冷水下锅焯水，捞出沥干', '锅中不放油，放入五花肉小火煎出油脂', '加入冰糖炒出糖色', '加入葱姜八角桂皮香叶炒香', '加入料酒、生抽、老抽翻炒均匀', '加入开水没过肉，大火烧开转小火炖1小时', '最后大火收汁，加盐调味即可'], prep_time: 15, cook_time: 70, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '3', name: '番茄炒蛋', category: '家常菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Tomato%20scrambled%20eggs%20Chinese%20home%20cooking%20fresh%20tomatoes%20and%20eggs%20professional%20food%20photography&image_size=square', ingredients: ['番茄 2个', '鸡蛋 3个', '小葱 1根', '盐 适量', '糖 少许', '食用油 适量'], steps: ['鸡蛋打散，加入少许盐搅匀', '番茄切块', '锅中倒油，油热后倒入蛋液炒至凝固捞出', '锅中留底油，放入番茄块翻炒出汁', '加入少许糖调味', '倒入炒好的鸡蛋，加盐调味', '翻炒均匀后撒上葱花即可'], prep_time: 10, cook_time: 10, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '4', name: '麻婆豆腐', category: '川菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Mapo%20Tofu%20spicy%20Sichuan%20dish%20with%20tofu%20and%20minced%20pork%20professional%20food%20photography&image_size=square', ingredients: ['嫩豆腐 1块', '猪肉末 100g', '郫县豆瓣酱 2勺', '花椒粉 1勺', '葱姜蒜 适量', '生抽 1勺', '料酒 1勺', '淀粉水 适量'], steps: ['豆腐切小块，开水焯一下去除豆腥味', '锅中倒油，油热后放入猪肉末炒至变色', '加入郫县豆瓣酱炒出红油', '加入葱姜蒜炒香', '加入生抽、料酒翻炒', '加入开水，放入豆腐块', '小火炖5分钟，加入淀粉水勾芡', '出锅撒上花椒粉即可'], prep_time: 15, cook_time: 20, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '5', name: '清蒸鲈鱼', category: '粤菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Steamed%20sea%20bass%20Cantonese%20style%20with%20ginger%20and%20scallions%20professional%20food%20photography&image_size=square', ingredients: ['鲈鱼 1条', '生姜 1块', '大葱 1根', '蒸鱼豉油 3勺', '料酒 1勺', '食用油 适量'], steps: ['鲈鱼处理干净，两面划几刀，用料酒腌制10分钟', '生姜切丝，大葱切丝', '鱼身上铺姜丝和葱丝', '蒸锅水烧开后，放入鱼蒸8-10分钟', '取出鱼，倒掉多余水分', '淋上蒸鱼豉油', '另起锅热油，浇在鱼身上即可'], prep_time: 15, cook_time: 15, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '6', name: '水煮肉片', category: '川菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Sichuan%20boiled%20pork%20slices%20in%20chili%20oil%20spicy%20Chinese%20food%20professional%20food%20photography&image_size=square', ingredients: ['猪里脊肉 300g', '豆芽 200g', '干辣椒 20g', '花椒 10g', '郫县豆瓣酱 2勺', '葱姜蒜 适量', '生抽 1勺', '料酒 1勺', '淀粉 适量'], steps: ['猪肉切片，加入料酒、生抽、淀粉腌制15分钟', '豆芽洗净备用', '锅中倒油，油热后放入郫县豆瓣酱炒出红油', '加入葱姜蒜炒香', '加入开水，放入豆芽煮熟捞出铺在碗底', '将肉片逐片放入锅中煮熟', '连汤一起倒入碗中', '干辣椒切段铺在肉片上', '另起锅热油，浇在干辣椒和花椒上即可'], prep_time: 20, cook_time: 25, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '7', name: '酸辣土豆丝', category: '家常菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Shredded%20potato%20with%20vinegar%20and%20chili%20Chinese%20home%20cooking%20professional%20food%20photography&image_size=square', ingredients: ['土豆 2个', '干辣椒 5个', '花椒 少许', '大蒜 2瓣', '醋 2勺', '盐 适量', '糖 少许'], steps: ['土豆切丝，用清水浸泡去除淀粉', '大蒜切片，干辣椒切段', '锅中倒油，油热后放入花椒和干辣椒炒香', '加入大蒜片炒香', '倒入土豆丝快速翻炒', '加入盐、糖调味', '最后淋入醋翻炒均匀即可'], prep_time: 15, cook_time: 8, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '8', name: '木须肉', category: '家常菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Muxu%20pork%20with%20eggs%20and%20vegetables%20Chinese%20home%20cooking%20professional%20food%20photography&image_size=square', ingredients: ['猪肉丝 150g', '鸡蛋 2个', '黄瓜 1根', '木耳 适量', '胡萝卜 半根', '葱姜蒜 适量', '生抽 1勺', '料酒 1勺', '盐 适量'], steps: ['鸡蛋打散炒熟备用', '猪肉丝用料酒腌制10分钟', '黄瓜、胡萝卜切丝，木耳泡发撕成小块', '锅中倒油，油热后放入猪肉丝炒至变色', '加入葱姜蒜炒香', '加入生抽翻炒', '放入胡萝卜丝和木耳翻炒', '加入黄瓜丝继续翻炒', '最后加入炒好的鸡蛋，加盐调味即可'], prep_time: 20, cook_time: 15, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '9', name: '家常豆腐', category: '家常菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Home%20style%20tofu%20with%20vegetables%20Chinese%20cooking%20professional%20food%20photography&image_size=square', ingredients: ['豆腐 1块', '青椒 1个', '红椒 1个', '木耳 适量', '葱姜蒜 适量', '生抽 1勺', '蚝油 1勺', '盐 适量', '淀粉水 适量'], steps: ['豆腐切块，煎至两面金黄捞出', '青椒、红椒切块，木耳泡发', '锅中留底油，放入葱姜蒜炒香', '加入青红椒和木耳翻炒', '加入生抽、蚝油翻炒', '加入少许开水，放入煎好的豆腐', '小火炖5分钟，加入淀粉水勾芡', '加盐调味即可'], prep_time: 15, cook_time: 20, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '10', name: '鸡蛋羹', category: '家常菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Steamed%20egg%20custard%20smooth%20Chinese%20home%20cooking%20professional%20food%20photography&image_size=square', ingredients: ['鸡蛋 3个', '温水 200ml', '盐 适量', '生抽 1勺', '香油 几滴'], steps: ['鸡蛋打散，加入盐搅匀', '加入温水（水温约40度），水和蛋的比例约1.5:1', '搅匀后过筛到蒸碗中', '盖上保鲜膜，用牙签扎几个孔', '蒸锅水烧开后，放入蒸碗蒸10-15分钟', '取出淋上生抽和香油即可'], prep_time: 10, cook_time: 15, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '11', name: '番茄蛋汤', category: '汤羹', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Tomato%20egg%20drop%20soup%20Chinese%20style%20professional%20food%20photography&image_size=square', ingredients: ['番茄 2个', '鸡蛋 2个', '小葱 1根', '盐 适量', '香油 几滴'], steps: ['番茄切块', '锅中加水烧开', '放入番茄块煮3-5分钟', '鸡蛋打散，缓缓倒入锅中形成蛋花', '加盐调味', '出锅撒上葱花，滴几滴香油即可'], prep_time: 5, cook_time: 10, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '12', name: '蚂蚁上树', category: '川菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Ants%20climbing%20tree%20Sichuan%20dish%20with%20minced%20pork%20and%20glass%20noodles%20professional%20food%20photography&image_size=square', ingredients: ['猪肉末 100g', '粉条 100g', '郫县豆瓣酱 1勺', '葱姜蒜 适量', '生抽 1勺', '料酒 1勺', '盐 适量'], steps: ['粉条用温水泡软', '锅中倒油，油热后放入猪肉末炒至变色', '加入郫县豆瓣酱炒出红油', '加入葱姜蒜炒香', '加入生抽、料酒翻炒', '加入开水，放入泡好的粉条', '小火炖煮至粉条变软，汤汁收浓', '加盐调味即可'], prep_time: 20, cook_time: 15, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '13', name: '青椒炒蛋', category: '家常菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Green%20pepper%20scrambled%20eggs%20Chinese%20home%20cooking%20professional%20food%20photography&image_size=square', ingredients: ['青椒 2个', '鸡蛋 3个', '大蒜 2瓣', '盐 适量', '食用油 适量'], steps: ['鸡蛋打散，加入少许盐搅匀', '青椒切块，大蒜切片', '锅中倒油，油热后倒入蛋液炒至凝固捞出', '锅中留底油，放入大蒜片炒香', '加入青椒块翻炒至变软', '倒入炒好的鸡蛋，加盐调味', '翻炒均匀即可'], prep_time: 10, cook_time: 10, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '14', name: '黄瓜炒鸡蛋', category: '家常菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Cucumber%20scrambled%20eggs%20Chinese%20home%20cooking%20professional%20food%20photography&image_size=square', ingredients: ['黄瓜 1根', '鸡蛋 3个', '大蒜 2瓣', '盐 适量', '食用油 适量'], steps: ['鸡蛋打散，加入少许盐搅匀', '黄瓜切片，大蒜切片', '锅中倒油，油热后倒入蛋液炒至凝固捞出', '锅中留底油，放入大蒜片炒香', '加入黄瓜片翻炒至变软', '倒入炒好的鸡蛋，加盐调味', '翻炒均匀即可'], prep_time: 10, cook_time: 10, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '15', name: '韭菜炒鸡蛋', category: '家常菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Leek%20scrambled%20eggs%20Chinese%20home%20cooking%20professional%20food%20photography&image_size=square', ingredients: ['韭菜 200g', '鸡蛋 3个', '盐 适量', '食用油 适量'], steps: ['鸡蛋打散，加入少许盐搅匀', '韭菜洗净切段', '锅中倒油，油热后倒入蛋液炒至凝固捞出', '锅中留底油，放入韭菜段快速翻炒', '倒入炒好的鸡蛋，加盐调味', '翻炒均匀即可'], prep_time: 10, cook_time: 8, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '16', name: '洋葱炒蛋', category: '家常菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Onion%20scrambled%20eggs%20Chinese%20home%20cooking%20professional%20food%20photography&image_size=square', ingredients: ['洋葱 1个', '鸡蛋 3个', '大蒜 2瓣', '盐 适量', '食用油 适量'], steps: ['鸡蛋打散，加入少许盐搅匀', '洋葱切丝，大蒜切片', '锅中倒油，油热后倒入蛋液炒至凝固捞出', '锅中留底油，放入大蒜片炒香', '加入洋葱丝翻炒至变软', '倒入炒好的鸡蛋，加盐调味', '翻炒均匀即可'], prep_time: 10, cook_time: 12, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '17', name: '虎皮鸡蛋', category: '家常菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Tiger%20skin%20eggs%20fried%20eggs%20with%20soy%20sauce%20Chinese%20food%20professional%20food%20photography&image_size=square', ingredients: ['鸡蛋 6个', '葱姜蒜 适量', '生抽 2勺', '老抽 1勺', '糖 1勺', '盐 适量'], steps: ['鸡蛋煮熟，剥壳备用', '锅中倒油，油热后放入鸡蛋煎至表面起泡（虎皮状）', '加入葱姜蒜炒香', '加入生抽、老抽、糖翻炒', '加入开水没过鸡蛋，小火炖10分钟', '大火收汁，加盐调味即可'], prep_time: 15, cook_time: 20, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '18', name: '土豆烧豆角', category: '家常菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Potato%20and%20green%20bean%20stew%20Chinese%20home%20cooking%20professional%20food%20photography&image_size=square', ingredients: ['土豆 2个', '豆角 300g', '猪肉 100g', '葱姜蒜 适量', '生抽 1勺', '老抽 1勺', '盐 适量'], steps: ['土豆切块，豆角切段', '猪肉切片', '锅中倒油，油热后放入猪肉炒至变色', '加入葱姜蒜炒香', '加入土豆块和豆角翻炒', '加入生抽、老抽翻炒', '加入开水没过食材，小火炖20分钟', '加盐调味，大火收汁即可'], prep_time: 15, cook_time: 25, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '19', name: '番茄土豆片', category: '家常菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Tomato%20and%20potato%20slices%20Chinese%20home%20cooking%20professional%20food%20photography&image_size=square', ingredients: ['番茄 2个', '土豆 1个', '大蒜 2瓣', '盐 适量', '糖 少许'], steps: ['土豆切片，番茄切块', '大蒜切片', '锅中倒油，油热后放入大蒜片炒香', '加入番茄块翻炒出汁', '加入土豆片翻炒', '加入少许糖调味', '加水没过食材，小火炖10分钟', '加盐调味即可'], prep_time: 10, cook_time: 15, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '20', name: '椒盐小土豆', category: '家常菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Salt%20and%20pepper%20small%20potatoes%20Chinese%20snack%20professional%20food%20photography&image_size=square', ingredients: ['小土豆 500g', '椒盐 适量', '食用油 适量'], steps: ['小土豆洗净，放入锅中加水煮熟', '捞出沥干水分，用刀压扁', '锅中倒油，油热后放入土豆煎至两面金黄', '撒上椒盐调味即可'], prep_time: 10, cook_time: 15, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '21', name: '凉拌毛豆', category: '家常菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Cold%20edamame%20beans%20Chinese%20appetizer%20professional%20food%20photography&image_size=square', ingredients: ['毛豆 300g', '生姜 1块', '大蒜 2瓣', '干辣椒 5个', '生抽 2勺', '醋 1勺', '盐 适量', '糖 少许'], steps: ['毛豆洗净，剪去两头', '锅中加水烧开，放入毛豆煮熟捞出', '大蒜切末，生姜切丝，干辣椒切段', '碗中加入生抽、醋、盐、糖、蒜末、姜丝、干辣椒', '放入毛豆拌匀，静置30分钟即可'], prep_time: 10, cook_time: 10, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '22', name: '凉拌黄瓜', category: '家常菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Cold%20cucumber%20salad%20Chinese%20appetizer%20professional%20food%20photography&image_size=square', ingredients: ['黄瓜 2根', '大蒜 2瓣', '干辣椒 3个', '生抽 1勺', '醋 1勺', '盐 适量', '糖 少许'], steps: ['黄瓜拍碎切块', '大蒜切末', '碗中加入生抽、醋、盐、糖、蒜末、干辣椒', '放入黄瓜拌匀即可'], prep_time: 5, cook_time: 0, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '23', name: '凉拌木耳', category: '家常菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Cold%20black%20fungus%20salad%20Chinese%20appetizer%20professional%20food%20photography&image_size=square', ingredients: ['木耳 100g', '大蒜 2瓣', '小葱 1根', '生抽 1勺', '醋 1勺', '盐 适量', '香油 几滴'], steps: ['木耳泡发洗净，开水焯一下捞出过凉', '大蒜切末，小葱切葱花', '碗中加入生抽、醋、盐、蒜末', '放入木耳拌匀，撒上葱花，滴几滴香油即可'], prep_time: 30, cook_time: 5, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '24', name: '香辣豆瓣鱼', category: '川菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Spicy%20bean%20sauce%20fish%20Sichuan%20style%20professional%20food%20photography&image_size=square', ingredients: ['草鱼 1条', '郫县豆瓣酱 2勺', '葱姜蒜 适量', '生抽 1勺', '料酒 1勺', '淀粉 适量'], steps: ['鱼处理干净，两面划几刀，用料酒腌制10分钟', '鱼身拍上淀粉', '锅中倒油，油热后放入鱼煎至两面金黄捞出', '锅中留底油，放入郫县豆瓣酱炒出红油', '加入葱姜蒜炒香', '加入生抽、料酒翻炒', '加入开水，放入煎好的鱼', '小火炖10分钟，大火收汁即可'], prep_time: 20, cook_time: 25, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '25', name: '干锅有机花菜', category: '川菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Dry%20pot%20cauliflower%20Sichuan%20style%20professional%20food%20photography&image_size=square', ingredients: ['有机花菜 500g', '五花肉 100g', '干辣椒 5个', '花椒 少许', '葱姜蒜 适量', '生抽 1勺', '蚝油 1勺', '盐 适量'], steps: ['花菜洗净切小块，五花肉切片', '锅中倒油，油热后放入五花肉炒至出油', '加入干辣椒和花椒炒香', '加入葱姜蒜炒香', '加入花菜翻炒至变软', '加入生抽、蚝油翻炒', '加盐调味，大火翻炒至收汁即可'], prep_time: 10, cook_time: 15, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '26', name: '鸡蛋炒面', category: '主食', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Egg%20fried%20noodles%20Chinese%20style%20professional%20food%20photography&image_size=square', ingredients: ['面条 200g', '鸡蛋 2个', '青菜 适量', '葱姜蒜 适量', '生抽 1勺', '老抽 半勺', '盐 适量'], steps: ['面条煮熟捞出过凉备用', '鸡蛋打散炒熟备用', '青菜洗净', '锅中倒油，油热后放入葱姜蒜炒香', '加入青菜翻炒', '加入面条翻炒', '加入生抽、老抽翻炒', '加入炒好的鸡蛋，加盐调味', '翻炒均匀即可'], prep_time: 15, cook_time: 10, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '27', name: '酱香土豆焖鸡胸肉', category: '川菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Braised%20chicken%20breast%20with%20potatoes%20professional%20food%20photography&image_size=square', ingredients: ['鸡胸肉 200g', '土豆 2个', '葱姜蒜 适量', '生抽 1勺', '蚝油 1勺', '盐 适量'], steps: ['鸡胸肉切块，土豆切块', '锅中倒油，油热后放入鸡胸肉炒至变色', '加入葱姜蒜炒香', '加入生抽、蚝油翻炒', '加入土豆块翻炒', '加入开水没过食材，小火炖15分钟', '加盐调味，大火收汁即可'], prep_time: 15, cook_time: 20, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '28', name: '梅菜扣肉', category: '粤菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Mei%20cai%20kou%20rou%20Cantonese%20braised%20pork%20professional%20food%20photography&image_size=square', ingredients: ['五花肉 500g', '梅菜干 100g', '葱姜蒜 适量', '生抽 2勺', '老抽 1勺', '料酒 1勺', '糖 1勺', '盐 适量'], steps: ['五花肉切块，冷水下锅焯水', '锅中倒油，放入五花肉煎至两面金黄', '加入葱姜蒜炒香', '加入生抽、老抽、料酒、糖翻炒', '加入开水没过肉，小火炖30分钟', '梅菜干泡发洗净切碎', '将肉和梅菜干一起放入碗中，上锅蒸30分钟', '倒扣装盘即可'], prep_time: 20, cook_time: 90, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '29', name: '干捞粉丝', category: '粤菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Dry%20braised%20vermicelli%20Cantonese%20style%20professional%20food%20photography&image_size=square', ingredients: ['粉丝 100g', '虾仁 100g', '肉末 50g', '葱姜蒜 适量', '生抽 1勺', '蚝油 1勺', '盐 适量'], steps: ['粉丝用温水泡软', '虾仁洗净，肉末备用', '锅中倒油，油热后放入肉末炒至变色', '加入虾仁翻炒', '加入葱姜蒜炒香', '加入生抽、蚝油翻炒', '放入泡好的粉丝，小火翻炒至汤汁收浓', '加盐调味即可'], prep_time: 20, cook_time: 15, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '30', name: '捞汁虾仁', category: '粤菜', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Shrimp%20in%20special%20sauce%20Cantonese%20style%20professional%20food%20photography&image_size=square', ingredients: ['虾仁 200g', '黄瓜 1根', '大蒜 2瓣', '小葱 1根', '生抽 2勺', '醋 1勺', '糖 1勺', '盐 适量'], steps: ['虾仁洗净，开水焯熟捞出过凉', '黄瓜切丝，大蒜切末，小葱切葱花', '碗中加入生抽、醋、糖、盐、蒜末', '放入虾仁和黄瓜丝拌匀', '撒上葱花即可'], prep_time: 10, cook_time: 5, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '31', name: '提拉米苏', category: '甜品', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Tiramisu%20Italian%20dessert%20professional%20food%20photography&image_size=square', ingredients: ['马斯卡彭奶酪 200g', '鸡蛋 2个', '细砂糖 50g', '咖啡液 100ml', '可可粉 适量', '手指饼干 适量'], steps: ['鸡蛋分离，蛋黄加糖打发', '马斯卡彭奶酪软化加入蛋黄糊搅匀', '蛋白打发至硬性发泡', '将蛋白霜和蛋黄糊混合', '手指饼干快速蘸咖啡液', '一层手指饼干一层奶酪糊', '放入冰箱冷藏4小时', '取出撒上可可粉即可'], prep_time: 30, cook_time: 0, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '32', name: '青提柠檬气泡水', category: '甜品', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Green%20grape%20lemon%20sparkling%20water%20refreshing%20drink%20professional%20food%20photography&image_size=square', ingredients: ['青提 100g', '柠檬 1个', '气泡水 300ml', '蜂蜜 适量', '冰块 适量'], steps: ['青提洗净，柠檬切片', '杯中放入青提和柠檬片', '加入蜂蜜和冰块', '倒入气泡水', '搅匀即可'], prep_time: 5, cook_time: 0, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '33', name: '海蓝琉璃厚牛乳奶冻', category: '甜品', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Blue%20milk%20pudding%20dessert%20professional%20food%20photography&image_size=square', ingredients: ['牛奶 200ml', '淡奶油 100ml', '吉利丁片 5g', '细砂糖 20g', '蝶豆花 适量'], steps: ['吉利丁片用冷水泡软', '牛奶、淡奶油、糖放入锅中加热至糖融化', '加入泡软的吉利丁片搅匀', '蝶豆花泡出蓝色水加入奶液', '倒入模具，放入冰箱冷藏2小时', '取出脱模即可'], prep_time: 15, cook_time: 0, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '34', name: '粉啵啵炼奶西米露', category: '甜品', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Tapioca%20pudding%20with%20condensed%20milk%20pink%20bubbles%20dessert%20professional%20food%20photography&image_size=square', ingredients: ['西米 50g', '牛奶 200ml', '炼奶 2勺', '粉色啵啵球 适量'], steps: ['西米放入锅中煮至透明，捞出过凉', '牛奶加入炼奶搅匀', '放入西米和粉色啵啵球', '搅匀即可'], prep_time: 20, cook_time: 0, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '35', name: '紫菜蛋花汤', category: '汤羹', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Seaweed%20egg%20drop%20soup%20Chinese%20style%20professional%20food%20photography&image_size=square', ingredients: ['紫菜 1片', '鸡蛋 2个', '小葱 1根', '盐 适量', '香油 几滴'], steps: ['紫菜泡发洗净', '锅中加水烧开', '放入紫菜煮2分钟', '鸡蛋打散，缓缓倒入锅中形成蛋花', '加盐调味', '出锅撒上葱花，滴几滴香油即可'], prep_time: 5, cook_time: 8, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '36', name: '鲜虾浓汤泡饭', category: '汤羹', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Shrimp%20rice%20soup%20Chinese%20style%20professional%20food%20photography&image_size=square', ingredients: ['鲜虾 100g', '米饭 1碗', '葱姜蒜 适量', '生抽 1勺', '盐 适量'], steps: ['鲜虾去壳去虾线', '锅中倒油，油热后放入鲜虾炒至变色', '加入葱姜蒜炒香', '加入生抽翻炒', '加入开水煮5分钟', '放入米饭煮2分钟', '加盐调味即可'], prep_time: 15, cook_time: 10, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '37', name: '鸡蛋发面饼', category: '主食', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Egg%20flatbread%20Chinese%20style%20professional%20food%20photography&image_size=square', ingredients: ['面粉 200g', '鸡蛋 2个', '牛奶 100ml', '盐 适量', '食用油 适量'], steps: ['面粉加入盐搅匀', '加入牛奶和成面团', '醒发30分钟', '鸡蛋打散加入盐搅匀', '面团擀成薄片，刷上油', '卷起来切成小段，压扁擀成饼', '锅中倒油，油热后放入饼煎至两面金黄', '倒入蛋液煎熟即可'], prep_time: 40, cook_time: 15, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+        { id: '38', name: '五彩蛋炒饭', category: '主食', image_url: 'https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=Colorful%20egg%20fried%20rice%20Chinese%20style%20professional%20food%20photography&image_size=square', ingredients: ['米饭 1碗', '鸡蛋 2个', '胡萝卜 半根', '黄瓜 半根', '玉米粒 适量', '盐 适量'], steps: ['鸡蛋打散炒熟备用', '胡萝卜、黄瓜切丁', '锅中倒油，油热后放入胡萝卜丁和玉米粒翻炒', '加入黄瓜丁继续翻炒', '放入米饭翻炒', '加入炒好的鸡蛋，加盐调味', '翻炒均匀即可'], prep_time: 10, cook_time: 10, created_at: '2026-07-05T00:00:00.000Z', updated_at: '2026-07-05T00:00:00.000Z' },
+      ],
+      categories: categories,
+    };
+    fs.writeFileSync(DB_FILE, JSON.stringify(dbData, null, 2));
+  }
+};
+
+initData();
+
+const readDb = () => {
+  const data = fs.readFileSync(DB_FILE, 'utf8');
+  return JSON.parse(data);
+};
+
+const writeDb = (dbData) => {
+  fs.writeFileSync(DB_FILE, JSON.stringify(dbData, null, 2));
+};
+
+app.use(express.json({ limit: '10mb' }));
+
+app.get('/api/categories', (req, res) => {
+  const dbData = readDb();
+  res.json(dbData.categories);
+});
+
+app.get('/api/recipes', (req, res) => {
+  const dbData = readDb();
+  res.json(dbData.recipes);
+});
+
+app.post('/api/recipes', (req, res) => {
+  const { name, category, image_url, ingredients, steps, prep_time, cook_time } = req.body;
+  
+  if (!name || !category) {
+    return res.status(400).json({ error: '菜谱名称和分类不能为空' });
+  }
+
+  const dbData = readDb();
+  const existingRecipe = dbData.recipes.find(r => r.name === name);
+  if (existingRecipe) {
+    return res.status(400).json({ error: '该菜谱已存在' });
+  }
+
+  const newRecipe = {
+    id: Date.now().toString(),
+    name,
+    category,
+    image_url: image_url || '',
+    ingredients: ingredients || [],
+    steps: steps || [],
+    prep_time: prep_time || 0,
+    cook_time: cook_time || 0,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  dbData.recipes.unshift(newRecipe);
+  writeDb(dbData);
+  res.json(newRecipe);
+});
+
+app.put('/api/recipes/:id', (req, res) => {
+  const { id } = req.params;
+  const { name, category, image_url, ingredients, steps, prep_time, cook_time } = req.body;
+
+  const dbData = readDb();
+  const recipe = dbData.recipes.find(r => r.id === id);
+  
+  if (!recipe) {
+    return res.status(404).json({ error: '菜谱不存在' });
+  }
+
+  if (name !== recipe.name) {
+    const existingRecipe = dbData.recipes.find(r => r.name === name && r.id !== id);
+    if (existingRecipe) {
+      return res.status(400).json({ error: '该菜谱名称已存在' });
+    }
+  }
+
+  recipe.name = name;
+  recipe.category = category;
+  if (image_url) recipe.image_url = image_url;
+  recipe.ingredients = ingredients || [];
+  recipe.steps = steps || [];
+  recipe.prep_time = prep_time || 0;
+  recipe.cook_time = cook_time || 0;
+  recipe.updated_at = new Date().toISOString();
+
+  writeDb(dbData);
+  res.json(recipe);
+});
+
+app.delete('/api/recipes/:id', (req, res) => {
+  const { id } = req.params;
+
+  const dbData = readDb();
+  const index = dbData.recipes.findIndex(r => r.id === id);
+  
+  if (index === -1) {
+    return res.status(404).json({ error: '菜谱不存在' });
+  }
+
+  const deletedRecipe = dbData.recipes.splice(index, 1)[0];
+  writeDb(dbData);
+  res.json(deletedRecipe);
+});
+
+app.get('/api/admin/config', (req, res) => {
+  res.json({
+    adminPhone: process.env.ADMIN_PHONE || '18329081624',
+  });
+});
+
+app.post('/api/admin/login', (req, res) => {
+  const { phone, password } = req.body;
+  const adminPhone = process.env.ADMIN_PHONE || '18329081624';
+  const adminPassword = process.env.ADMIN_PASSWORD || '421302';
+
+  if (phone === adminPhone && password === adminPassword) {
+    res.json({
+      success: true,
+      token: 'admin_token_' + Date.now(),
+    });
+  } else {
+    res.json({
+      success: false,
+      message: '账号或密码错误',
+    });
+  }
+});
+
+app.use('/api/ai', async (req, res) => {
+  try {
+    const { method, body, originalUrl } = req;
+    const apiPath = originalUrl.replace(/^\/api\/ai/, '');
+    const apiUrl = `https://tokenhub.tencentmaas.com/v1${apiPath}`;
+    const apiKey = process.env.AI_API_KEY;
+
+    if (!apiKey) {
+      return res.status(500).json({ error: 'AI API Key not configured' });
+    }
+
+    const response = await fetch(apiUrl, {
+      method,
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${apiKey}`,
+      },
+      body: method !== 'GET' ? JSON.stringify(body) : undefined,
+    });
+
+    const data = await response.json();
+    res.status(response.status).json(data);
+  } catch (error) {
+    console.error('API proxy error:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+app.use(express.static(path.join(__dirname, 'dist')));
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
+
+app.listen(PORT, () => {
+  console.log(`Server running on http://localhost:${PORT}`);
+});

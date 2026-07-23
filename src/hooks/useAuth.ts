@@ -1,80 +1,112 @@
 import { useState, useEffect, useCallback } from 'react';
 
+interface AuthUser {
+  id: string;
+  username: string;
+  role: 'admin' | 'user';
+}
+
 export interface AuthState {
-  isLoggedIn: boolean;
+  user: AuthUser | null;
   loading: boolean;
   error: string | null;
 }
 
 export const useAuth = () => {
   const [authState, setAuthState] = useState<AuthState>({
-    isLoggedIn: false,
+    user: null,
     loading: true,
     error: null,
   });
 
-  useEffect(() => {
-    const storedToken = localStorage.getItem('recipe_admin_token');
-    setAuthState({
-      isLoggedIn: !!storedToken,
-      loading: false,
-      error: null,
-    });
+  const checkAuth = useCallback(async () => {
+    const token = localStorage.getItem('recipe_token');
+    if (!token) {
+      setAuthState({ user: null, loading: false, error: null });
+      return;
+    }
+
+    try {
+      const response = await fetch('/api/auth/me', {
+        headers: { Authorization: `Bearer ${token}`  },
+      });
+
+      if (!response.ok) {
+        localStorage.removeItem('recipe_token');
+        setAuthState({ user: null, loading: false, error: null });
+        return;
+      }
+
+      const user = await response.json();
+      setAuthState({ user, loading: false, error: null });
+    } catch {
+      setAuthState({ user: null, loading: false, error: null });
+    }
   }, []);
 
-  const login = useCallback(async (phone: string, password: string) => {
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  const login = useCallback(async (username: string, password: string): Promise<boolean> => {
     setAuthState(prev => ({ ...prev, loading: true, error: null }));
-    
+
     try {
-      const response = await fetch('/api/admin/login', {
+      const response = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ phone, password }),
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, password }),
       });
-      
+
       const data = await response.json();
-      
+
       if (data.success) {
-        localStorage.setItem('recipe_admin_token', data.token);
+        localStorage.setItem('recipe_token', data.token);
         setAuthState({
-          isLoggedIn: true,
+          user: data.user,
           loading: false,
           error: null,
         });
         return true;
       } else {
         setAuthState({
-          isLoggedIn: false,
+          user: null,
           loading: false,
           error: data.message || '账号或密码错误',
         });
         return false;
       }
     } catch {
-      localStorage.setItem('recipe_admin_token', 'admin_token');
       setAuthState({
-        isLoggedIn: true,
+        user: null,
         loading: false,
-        error: null,
+        error: '网络错误，请稍后重试',
       });
-      return true;
+      return false;
     }
   }, []);
 
   const logout = useCallback(() => {
-    localStorage.removeItem('recipe_admin_token');
+    localStorage.removeItem('recipe_token');
     setAuthState({
-      isLoggedIn: false,
+      user: null,
       loading: false,
       error: null,
     });
   }, []);
 
+  const getToken = useCallback(() => {
+    return localStorage.getItem('recipe_token');
+  }, []);
+
   return {
-    ...authState,
+    user: authState.user,
+    isLoggedIn: !!authState.user,
+    isAdmin: authState.user?.role === 'admin',
+    loading: authState.loading,
+    error: authState.error,
     login,
     logout,
+    getToken,
   };
 };

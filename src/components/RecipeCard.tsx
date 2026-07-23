@@ -1,22 +1,19 @@
 import { Recipe } from '@/types';
-import { Clock, ChefHat } from 'lucide-react';
+import { Clock, ChefHat, ShoppingCart } from 'lucide-react';
+import { formatTime } from '@/lib/utils';
 
 interface RecipeCardProps {
   recipe: Recipe;
   onClick: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  onOrder?: () => void;
   isLoggedIn?: boolean;
+  isAdmin?: boolean;
+  ordered?: boolean;
 }
 
-export const RecipeCard = ({ recipe, onClick, onEdit, onDelete, isLoggedIn = false }: RecipeCardProps) => {
-  const formatTime = (minutes: number) => {
-    if (minutes < 60) return `${minutes}分钟`;
-    const hours = Math.floor(minutes / 60);
-    const mins = minutes % 60;
-    return mins > 0 ? `${hours}小时${mins}分钟` : `${hours}小时`;
-  };
-
+export const RecipeCard = ({ recipe, onClick, onEdit, onDelete, onOrder, isLoggedIn = false, isAdmin = false, ordered = false }: RecipeCardProps) => {
   return (
     <div
       className="bg-white rounded-2xl shadow-sm hover:shadow-lg transition-all duration-300 overflow-hidden cursor-pointer group"
@@ -32,12 +29,12 @@ export const RecipeCard = ({ recipe, onClick, onEdit, onDelete, isLoggedIn = fal
           {recipe.category}
         </div>
       </div>
-      
+
       <div className="p-5">
         <h3 className="text-lg font-bold text-gray-800 mb-3 group-hover:text-lightgreen transition-colors">
           {recipe.name}
         </h3>
-        
+
         <div className="flex items-center gap-4 text-sm text-gray-500 mb-3">
           <div className="flex items-center gap-1">
             <Clock className="w-4 h-4" />
@@ -48,7 +45,7 @@ export const RecipeCard = ({ recipe, onClick, onEdit, onDelete, isLoggedIn = fal
             <span>烹饪 {formatTime(recipe.cook_time)}</span>
           </div>
         </div>
-        
+
         <div className="flex flex-wrap gap-1 mb-4">
           {recipe.ingredients.slice(0, 3).map((ingredient, index) => (
             <span
@@ -64,29 +61,48 @@ export const RecipeCard = ({ recipe, onClick, onEdit, onDelete, isLoggedIn = fal
             </span>
           )}
         </div>
-        
-        {isLoggedIn && onEdit && onDelete && (
-          <div className="flex gap-2">
+
+        <div className="flex gap-2">
+          {isLoggedIn && onOrder && (
             <button
               onClick={(e) => {
                 e.stopPropagation();
-                onEdit();
+                onOrder();
               }}
-              className="flex-1 py-2 bg-lightgreen/20 text-gray-700 rounded-lg text-sm font-medium hover:bg-lightgreen/30 transition-colors"
+              disabled={ordered}
+              className={`flex-1 py-2 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-1 ${
+                ordered
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                  : 'bg-orange-50 text-orange-600 hover:bg-orange-100'
+              }`}
             >
-              编辑
+              <ShoppingCart className="w-4 h-4" />
+              {ordered ? '已点' : '点菜'}
             </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onDelete();
-              }}
-              className="flex-1 py-2 bg-red-50 text-red-500 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors"
-            >
-              删除
-            </button>
-          </div>
-        )}
+          )}
+          {isAdmin && onEdit && onDelete && (
+            <>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onEdit();
+                }}
+                className="flex-1 py-2 bg-lightgreen/20 text-gray-700 rounded-lg text-sm font-medium hover:bg-lightgreen/30 transition-colors"
+              >
+                编辑
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                className="flex-1 py-2 bg-red-50 text-red-500 rounded-lg text-sm font-medium hover:bg-red-100 transition-colors"
+              >
+                删除
+              </button>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

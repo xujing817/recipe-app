@@ -1,0 +1,11 @@
+const fs = require('fs');
+const path = require('path');
+const serverPath = path.join(__dirname, '..', 'server.js');
+let content = fs.readFileSync(serverPath, 'utf-8');
+const cats = ['\u5bb6\u5e38\u83dc','\u5ddd\u83dc','\u7ca4\u83dc','\u6e58\u83dc','\u751c\u54c1','\u6c64\u7fb9','\u4e3b\u98df','\u5176\u4ed6'];
+const newBlock = 'const defaultCategories = [\n' + cats.map((n,i) => '  { id: \''+(i+1)+'\', name: \''+n+'\', created_at: new Date().toISOString() }').join(',\n') + ',\n];';
+const start = content.indexOf('const defaultCategories');
+const end = content.indexOf('];', start) + 2;
+content = content.slice(0, start) + newBlock + content.slice(end);
+fs.writeFileSync(serverPath, content, 'utf-8');
+console.log('Fixed');

@@ -1,21 +1,15 @@
-import { defineConfig } from 'vite'
+const fs = require('fs');
+const content = `import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import path from 'path'
-import { fileURLToPath } from 'url'
-
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
+import tsconfigPaths from 'vite-tsconfig-paths'
 
 export default defineConfig({
   build: {
     sourcemap: 'hidden',
   },
-  resolve: {
-    alias: {
-      '@': path.resolve(__dirname, 'src'),
-    },
-  },
   plugins: [
     react(),
+    tsconfigPaths()
   ],
   server: {
     proxy: {
@@ -26,3 +20,6 @@ export default defineConfig({
     },
   },
 })
+`;
+fs.writeFileSync('C:/Users/19821/Desktop/????app/vite.config.ts', content, 'utf-8');
+console.log('vite.config.ts written ok');
