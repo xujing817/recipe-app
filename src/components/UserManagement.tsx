@@ -6,9 +6,10 @@ interface UserManagementProps {
   isOpen: boolean;
   onClose: () => void;
   getToken: () => string | null;
+  isSuperAdmin: boolean;
 }
 
-export const UserManagement = ({ isOpen, onClose, getToken }: UserManagementProps) => {
+export const UserManagement = ({ isOpen, onClose, getToken, isSuperAdmin }: UserManagementProps) => {
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
   const [newUsername, setNewUsername] = useState('');

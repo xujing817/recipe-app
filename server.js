@@ -43,7 +43,7 @@ const readDb = () => {
     if (!fs.existsSync(DB_FILE)) {
       const init = { users: [], recipes: sampleRecipes, categories: defaultCategories, menus: [] };
       const adminHash = bcrypt.hashSync(ADMIN_PASSWORD, 10);
-      init.users.push({ id: 'admin-1', username: ADMIN_USERNAME, password_hash: adminHash, role: 'admin', created_at: new Date().toISOString() });
+      init.users.push({ id: 'admin-1', username: ADMIN_USERNAME, password_hash: adminHash, role: 'super_admin', created_at: new Date().toISOString() });
       fs.mkdirSync(DATA_DIR, { recursive: true });
       fs.writeFileSync(DB_FILE, JSON.stringify(init, null, 2));
       return init;
@@ -71,7 +71,7 @@ const authMiddleware = (req, res, next) => {
 };
 
 const adminMiddleware = (req, res, next) => {
-  if (req.user.role !== 'admin') {
+  if (req.user.role !== 'admin' && req.user.role !== 'super_admin') {
     return res.status(403).json({ error: '无权限' });
   }
   next();
@@ -121,7 +121,8 @@ app.get('/api/admin/users', authMiddleware, adminMiddleware, (req, res) => {
 
 app.post('/api/admin/users', authMiddleware, adminMiddleware, async (req, res) => {
   try {
-    const { username, password, role } = req.body;
+    const { username, password } = req.body;
+    const role = req.body.role || 'user';
     if (!username || !password) {
       return res.status(400).json({ error: '用户名和密码不能为空' });
     }
@@ -216,14 +217,14 @@ app.get('/api/menu', authMiddleware, (req, res) => {
   const db = readDb();
   const targetDate = req.query.date || new Date().toISOString().slice(0, 10);
   let menus = db.menus.filter(m => m.date === targetDate);
-  if (req.user.role !== 'admin') {
+  if (req.user.role !== 'admin' && req.user.role !== 'super_admin') {
     menus = menus.filter(m => m.user_id === req.user.id);
   }
   res.json(menus);
 });
 
 app.post('/api/menu', authMiddleware, (req, res) => {
-  const { recipe_id, recipe_name } = req.body;
+  const { recipe_id, recipe_name, note } = req.body;
   if (!recipe_id || !recipe_name) return res.status(400).json({ error: '参数不完整' });
   const db = readDb();
   const today = new Date().toISOString().slice(0, 10);
@@ -235,13 +236,13 @@ app.post('/api/menu', authMiddleware, (req, res) => {
   if (recipe && recipe.ingredients) {
     recipe.ingredients.forEach(ing => { ingredientsStatus[ing] = false; });
   }
-  const menuItem = { id: 'menu-' + Date.now(), recipe_id, recipe_name, user_id: req.user.id, username: req.user.username, date: today, created_at: new Date().toISOString(), ingredients_status: ingredientsStatus, all_ingredients_ready: false, completed: false };
+  const menuItem = { id: 'menu-' + Date.now(), recipe_id, recipe_name, user_id: req.user.id, username: req.user.username, note: note || '', date: today, created_at: new Date().toISOString(), ingredients_status: ingredientsStatus, all_ingredients_ready: false, completed: false };
   db.menus.push(menuItem);
   writeDb(db);
   res.json(menuItem);
 });
 
-app.put('/api/menu/:id/status', authMiddleware, adminMiddleware, (req, res) => {
+app.put('/api/menu/:id/status', authMiddleware, (req, res, next) => { if (req.user.role !== 'admin' && req.user.role !== 'super_admin') return res.status(403).json({ error: '无权限' }); next(); }, (req, res) => {
   const db = readDb();
   const item = db.menus.find(m => m.id === req.params.id);
   if (!item) return res.status(404).json({ error: '菜单项不存在' });
@@ -267,7 +268,7 @@ app.delete('/api/menu/:id', authMiddleware, (req, res) => {
   const db = readDb();
   const idx = db.menus.findIndex(m => m.id === req.params.id);
   if (idx === -1) return res.status(404).json({ error: '菜单项不存在' });
-  if (req.user.role !== 'admin' && db.menus[idx].user_id !== req.user.id) {
+  if (req.user.role !== 'admin' && req.user.role !== 'super_admin' && db.menus[idx].user_id !== req.user.id) {
     return res.status(403).json({ error: '无权限删除' });
   }
   db.menus.splice(idx, 1);

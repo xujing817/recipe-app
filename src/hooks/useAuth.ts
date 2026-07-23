@@ -3,7 +3,7 @@ import { useState, useEffect, useCallback } from 'react';
 interface AuthUser {
   id: string;
   username: string;
-  role: 'admin' | 'user';
+  role: 'super_admin' | 'admin' | 'user';
 }
 
 export interface AuthState {
@@ -62,37 +62,21 @@ export const useAuth = () => {
 
       if (data.success) {
         localStorage.setItem('recipe_token', data.token);
-        setAuthState({
-          user: data.user,
-          loading: false,
-          error: null,
-        });
+        setAuthState({ user: data.user, loading: false, error: null });
         return true;
       } else {
-        setAuthState({
-          user: null,
-          loading: false,
-          error: data.message || '账号或密码错误',
-        });
+        setAuthState({ user: null, loading: false, error: data.message || '账号或密码错误' });
         return false;
       }
     } catch {
-      setAuthState({
-        user: null,
-        loading: false,
-        error: '网络错误，请稍后重试',
-      });
+      setAuthState({ user: null, loading: false, error: '网络错误，请稍后重试' });
       return false;
     }
   }, []);
 
   const logout = useCallback(() => {
     localStorage.removeItem('recipe_token');
-    setAuthState({
-      user: null,
-      loading: false,
-      error: null,
-    });
+    setAuthState({ user: null, loading: false, error: null });
   }, []);
 
   const getToken = useCallback(() => {
@@ -102,7 +86,8 @@ export const useAuth = () => {
   return {
     user: authState.user,
     isLoggedIn: !!authState.user,
-    isAdmin: authState.user?.role === 'admin',
+    isSuperAdmin: authState.user?.role === 'super_admin',
+    isAdmin: authState.user?.role === 'admin' || authState.user?.role === 'super_admin',
     loading: authState.loading,
     error: authState.error,
     login,

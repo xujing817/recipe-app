@@ -1,5 +1,5 @@
 import { useEffect, useState, useMemo } from 'react';
-import { Calendar, ClipboardList, Loader2, ChefHat, ArrowLeft, List, Trash2, Check, ShoppingBag, CheckCircle2, Circle, ChevronDown, ChevronUp } from 'lucide-react';
+import { Calendar, ClipboardList, Loader2, ChefHat, ArrowLeft, List, Trash2, Check, ShoppingBag, CheckCircle2, Circle, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
 import { useMenu } from '@/hooks/useMenu';
 import { MenuItem, Recipe } from '@/types';
 

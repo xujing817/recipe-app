@@ -20,7 +20,7 @@ export interface Category {
 export interface User {
   id: string;
   username: string;
-  role: 'admin' | 'user';
+  role: 'super_admin' | 'admin' | 'user';
   created_at: string;
 }
 
@@ -30,6 +30,7 @@ export interface MenuItem {
   recipe_name: string;
   user_id: string;
   username: string;
+  note?: string;
   date: string;
   created_at: string;
   ingredients_status?: Record<string, boolean>;
